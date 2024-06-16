@@ -14860,45 +14860,63 @@ speechSynthesis.getVoices();
 
     API.$on('PIPELINE:NOTIFICATION', function (args) {
         var ref = args.json;
-        if (
-            ref.type !== 'requestInvite' ||
-            $app.autoAcceptInviteRequests === 'Off'
-        )
+        if (ref.type !== 'requestInvite' || $app.autoAcceptInviteRequests === 'Off')
             return;
         var currentLocation = $app.lastLocation.location;
         if ($app.lastLocation.location === 'traveling') {
             currentLocation = $app.lastLocationDestination;
         }
-        if (!currentLocation) return;
+        if (!currentLocation || !this.checkCanInvite(currentLocation))
+            return;
+
         var L = this.parseLocation(currentLocation);
-        if (
-            $app.autoAcceptInviteRequests === 'All Favorites' &&
-            !$app.favoriteFriends.some((x) => x.id === ref.senderUserId)
-        )
-            return;
 
-        if (
-            $app.autoAcceptInviteRequests === 'Selected Favorites' &&
-            !$app.localFavoriteFriends.has(ref.senderUserId)
-        )
-            return;
-
-        this.getCachedWorld({
-            worldId: L.worldId
-        }).then((args1) => {
-            this.sendInvite(
-                {
-                    instanceId: L.tag,
-                    worldId: L.tag,
-                    worldName: args1.ref.name,
-                    rsvp: true
-                },
-                ref.senderUserId
-            ).then((_args) => {
-                $app.$message(`Auto invite sent to ${ref.senderUsername}`);
-                return _args;
-            });
-        });
+        try {
+            switch ($app.autoAcceptInviteRequests) {
+                case 'All Favorites':
+                    if (!$app.favoriteFriends.some(x => x.id === ref.senderUserId)) 
+                        break;
+                    this.getCachedWorld({
+                        worldId: L.worldId
+                    }).then((args) => {
+                        this.sendInvite(
+                            {
+                                instanceId: L.tag,
+                                worldId: L.tag,
+                                worldName: args.ref.name,
+                                rsvp: true
+                            },
+                            ref.senderUserId
+                        ).then((_args) => {
+                            $app.$message('Auto Invite sent to ' + ref.senderUsername);
+                            return _args;
+                        });
+                    });
+                    break;
+                case 'Selected Favorites':
+                    if (!$app.localFavoriteFriends.has(ref.senderUserId))
+                        break;
+                    this.getCachedWorld({
+                        worldId: L.worldId
+                    }).then((args) => {
+                        this.sendInvite(
+                            {
+                                instanceId: L.tag,
+                                worldId: L.tag,
+                                worldName: args.ref.name,
+                                rsvp: true
+                            },
+                            ref.senderUserId
+                        ).then((_args) => {
+                            $app.$message('Auto Invite sent to ' + ref.senderUsername);
+                            return _args;
+                        });
+                    });
+                    break;
+            }
+        } catch (err) {
+            console.error(error);
+        }
     });
 
     $app.data.unseenNotifications = [];
