@@ -14809,50 +14809,56 @@ speechSynthesis.getVoices();
         if ($app.lastLocation.location === 'traveling') {
             currentLocation = $app.lastLocationDestination;
         }
-        if (!currentLocation)
+        if (!currentLocation || !this.checkCanInvite(currentLocation))
             return;
+
         var L = this.parseLocation(currentLocation);
-        switch ($app.autoAcceptInviteRequests) {
-            case 'All Favorites':
-                if (!$app.favoriteFriends.some(x => x.id === ref.senderUserId)) 
-                    break;
-                this.getCachedWorld({
-                    worldId: L.worldId
-                }).then((args) => {
-                    this.sendInvite(
-                        {
-                            instanceId: L.tag,
-                            worldId: L.tag,
-                            worldName: args.ref.name,
-                            rsvp: true
-                        },
-                        ref.senderUserId
-                    ).then((_args) => {
-                        $app.$message('Auto Invite sent to ' + ref.senderUsername);
-                        return _args;
+
+        try {
+            switch ($app.autoAcceptInviteRequests) {
+                case 'All Favorites':
+                    if (!$app.favoriteFriends.some(x => x.id === ref.senderUserId)) 
+                        break;
+                    this.getCachedWorld({
+                        worldId: L.worldId
+                    }).then((args) => {
+                        this.sendInvite(
+                            {
+                                instanceId: L.tag,
+                                worldId: L.tag,
+                                worldName: args.ref.name,
+                                rsvp: true
+                            },
+                            ref.senderUserId
+                        ).then((_args) => {
+                            $app.$message('Auto Invite sent to ' + ref.senderUsername);
+                            return _args;
+                        });
                     });
-                });
-                break;
-            case 'Selected Favorites':
-                if (!$app.localFavoriteFriends.has(ref.senderUserId))
                     break;
-                this.getCachedWorld({
-                    worldId: L.worldId
-                }).then((args) => {
-                    this.sendInvite(
-                        {
-                            instanceId: L.tag,
-                            worldId: L.tag,
-                            worldName: args.ref.name,
-                            rsvp: true
-                        },
-                        ref.senderUserId
-                    ).then((_args) => {
-                        $app.$message('Auto Invite sent to ' + ref.senderUsername);
-                        return _args;
+                case 'Selected Favorites':
+                    if (!$app.localFavoriteFriends.has(ref.senderUserId))
+                        break;
+                    this.getCachedWorld({
+                        worldId: L.worldId
+                    }).then((args) => {
+                        this.sendInvite(
+                            {
+                                instanceId: L.tag,
+                                worldId: L.tag,
+                                worldName: args.ref.name,
+                                rsvp: true
+                            },
+                            ref.senderUserId
+                        ).then((_args) => {
+                            $app.$message('Auto Invite sent to ' + ref.senderUsername);
+                            return _args;
+                        });
                     });
-                });
-                break;
+                    break;
+            }
+        } catch (err) {
+            console.error(error);
         }
     });
 
