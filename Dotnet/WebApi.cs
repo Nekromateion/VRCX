@@ -18,6 +18,7 @@ namespace VRCX
         public CookieContainer _cookieContainer;
         private bool _cookieDirty;
         private Timer _timer;
+        public static IWebProxy? Proxy = WebRequest.DefaultWebProxy;
 
         static WebApi()
         {
@@ -139,7 +140,7 @@ namespace VRCX
 
         private static async Task LegacyImageUpload(HttpWebRequest request, IDictionary<string, object> options)
         {
-            request.Proxy = StartupArgs.Proxy;
+            request.Proxy = Proxy;
             request.Method = "POST";
             string boundary = "---------------------------" + DateTime.Now.Ticks.ToString("x");
             request.ContentType = "multipart/form-data; boundary=" + boundary;
@@ -184,7 +185,7 @@ namespace VRCX
 
         private static async Task UploadFilePut(HttpWebRequest request, IDictionary<string, object> options)
         {
-            request.Proxy = StartupArgs.Proxy;
+            request.Proxy = Proxy;
             request.Method = "PUT";
             request.ContentType = options["fileMIME"] as string;
             var fileData = options["fileData"] as string;
@@ -199,7 +200,7 @@ namespace VRCX
         
         private static async Task ImageUpload(HttpWebRequest request, IDictionary<string, object> options)
         {
-            request.Proxy = StartupArgs.Proxy;
+            request.Proxy = Proxy;
             request.Method = "POST";
             string boundary = "---------------------------" + DateTime.Now.Ticks.ToString("x");
             request.ContentType = "multipart/form-data; boundary=" + boundary;
@@ -252,7 +253,7 @@ namespace VRCX
             try
             {
                 var request = WebRequest.CreateHttp((string)options["url"]);
-                request.Proxy = StartupArgs.Proxy;
+                request.Proxy = Proxy;
                 request.CookieContainer = _cookieContainer;
                 request.KeepAlive = true;
                 request.UserAgent = Program.Version;

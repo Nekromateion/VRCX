@@ -5,6 +5,7 @@
 // For a copy, see <https://opensource.org/licenses/MIT>.
 
 using CefSharp;
+using CefSharp.Internals;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -17,7 +18,6 @@ namespace VRCX
 {
     internal class StartupArgs
     {
-        public static IWebProxy? Proxy = WebRequest.DefaultWebProxy;
         public static string LaunchCommand;
         public static Process[] processList;
 
@@ -29,6 +29,7 @@ namespace VRCX
             var isDebug = false;
             Debug.Assert(isDebug = true);
 
+            bool disableClosing = false;
             foreach (var arg in args)
             {
                 if (arg.Length > 12 && arg.Substring(0, 12) == "/uri=vrcx://")
@@ -51,15 +52,19 @@ namespace VRCX
                 if (arg.Length >= 16 && arg.Substring(0, 14) == "--proxy-server")
                 {
                     string proxyUrl = arg.Substring(15).Replace("'", string.Empty).Replace("\"", string.Empty);
-                    Proxy = new WebProxy(proxyUrl);
+                    WebApi.Proxy = new WebProxy(proxyUrl);
                 }
             }
+
+            var type = CommandLineArgsParser.GetArgumentValue(args, CefSharpArguments.SubProcessTypeArgument);
+            if (!string.IsNullOrEmpty(type))
+                disableClosing = true; // we're launching a subprocess, allow it
 
             if (!string.IsNullOrEmpty(Program.AppDataDirectory))
                 return; // we're launching with a custom config path, allow it
 
             // if we're launching a second instance, focus the first instance then exit
-            if (processList.Length > 1)
+            if (processList.Length > 1 && !disableClosing)
             {
                 IPCToMain();
                 Environment.Exit(0);
